@@ -1,3 +1,6 @@
+"""
+@author: Vitaly <vitaly@optinsoft.net> | github.com/optinsoft
+"""
 import pycuda.driver as cuda
 from pycuda.compiler import SourceModule
 import pycuda.gpuarray as gpuarray
@@ -42,7 +45,7 @@ def check_num_suffix(trx_address: str, suffixLength: int) -> bool:
     s = trx_address[-suffixLength:]
     return s.isdigit() and (s == suffixLength * s[0])
 
-def main_vanityTrxAddress(suffixLength: int, keyBlockCount: int, maxBlocks: int, blockIterations: int, verify: bool, verbose: bool) -> int:
+def main_vanityTrxAddress(suffixLength: int, keyBlockCount: int, maxBlocks: int, blockIterations: int, verify: bool, verbose: bool, outputFile: str) -> int:
     CL_PATH = config('CL_PATH', default='')
     if len(CL_PATH) > 0:
         os.environ['PATH'] += ';'+CL_PATH
@@ -128,8 +131,6 @@ def main_vanityTrxAddress(suffixLength: int, keyBlockCount: int, maxBlocks: int,
                     if verify and verbose:
                         print(f"private key[{i}]:                0x{priv}")
                         print(f"trx address[{i}]:                {trx_address}")
-                    else:
-                        print(f"0x{priv},{trx_address}")
                     if verify:
                         pk_bytes = bytes.fromhex(priv)
                         public_key = ecdsa.SigningKey.from_string(pk_bytes, curve=ecdsa.SECP256k1).verifying_key.to_string()
@@ -139,6 +140,16 @@ def main_vanityTrxAddress(suffixLength: int, keyBlockCount: int, maxBlocks: int,
                             print(f"trx address[{i}] (verification): {address}")
                         if address != trx_address:
                             print(f"Verification failed: _as[{i}]={_as}, trx_address[{i}]={trx_address}, verification={address}")
+                        else:
+                            print(f"0x{priv},{trx_address}")
+                            if outputFile:
+                                with open(outputFile, "a") as of:
+                                    of.write(f"0x{priv},{trx_address}\n")
+                    else:
+                        print(f"0x{priv},{trx_address}")
+                        if outputFile:
+                            with open(outputFile, "a") as of:
+                                of.write(f"0x{priv},{trx_address}\n")
                     return 1
                 else:
                     print(f"Unexpected result: _as[{i}]={_as}, trx_address[{i}]={trx_address}")
@@ -158,5 +169,6 @@ if __name__ == "__main__":
     parser.add_argument("--blocks", required=False, type=int, default=1000, help="try find vanity trx address within BLOCKS blocks (default: 1000)")
     parser.add_argument("--blockSize", required=False, type=int, default=128, help="generate block of BLOCKSIZE trx addresses by using GPU (default: 128)")
     parser.add_argument("--blockIterations", required=False, type=int, default=1, help="attempts to find vanity trx address within each block")
+    parser.add_argument("--output", required=False, type=str, default="", help="output found trx address to file")
     args = parser.parse_args()
-    main_vanityTrxAddress(args.suffixLength, args.blockSize, args.blocks, args.blockIterations, args.verify, args.verbose)
+    main_vanityTrxAddress(args.suffixLength, args.blockSize, args.blocks, args.blockIterations, args.verify, args.verbose, args.output)

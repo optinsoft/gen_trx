@@ -12,9 +12,9 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-                "--verbose",
-                "--verify",
-                "--suffixLength", "2",
+                "--verbose", "--verify",
+                "--output", "./output/l_4.txt",
+                "--suffixLength", "4",
                 "--blocks", "5000",
                 "--blockSize", "256",
                 "--blockIterations", "20"
