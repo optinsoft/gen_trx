@@ -8,9 +8,17 @@
             "name": "Python: pygentrx",
             "type": "python",
             "request": "launch",
-            "program": "pygentrx.py",
+            "program": "pyvanitytrx.py",
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": true,
+            "args": [
+                "--verbose",
+                "--verify",
+                "--suffixLength", "2",
+                "--blocks", "5000",
+                "--blockSize", "256",
+                "--blockIterations", "20"
+            ]
         }
     ]
 }

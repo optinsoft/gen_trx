@@ -48,7 +48,7 @@ def public_key_to_trx_address(public_key, i, print_keccak):
     return address.decode()
 
 def key_to_str(k: list[int]) -> str:
-    return reduce(lambda s, t: str(s) + t.to_bytes(4, byteorder='big').decode('ascii'), k[1:], k[0].to_bytes(4, byteorder='big').decode('ascii'))
+    return reduce(lambda s, t: str(s) + t.to_bytes(4, byteorder='big').decode('ascii'), k[1:], k[0].to_bytes(4, byteorder='big').decode('ascii')).rstrip('\x00')
 
 def key_to_hex(k: list[int]) -> str:
     return reduce(lambda s, t: str(s) + t.to_bytes(4, byteorder='big').hex(), k[1:], k[0].to_bytes(4, byteorder='big').hex())

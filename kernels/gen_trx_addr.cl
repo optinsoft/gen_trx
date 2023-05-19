@@ -92,20 +92,20 @@ __global__ void genTrxAddress(
     r8[i] = l2be(b58[8]);
 }
 
-__global__ void genTrxAddressWithPrefix(
-    GLOBAL_AS u32 *r0, GLOBAL_AS u32 *r1, GLOBAL_AS u32 *r2, GLOBAL_AS u32 *r3, GLOBAL_AS u32 *r4, GLOBAL_AS u32 *rp,
+__global__ void genTrxAddressWithNumSuffix(
+    GLOBAL_AS u32 *r0, GLOBAL_AS u32 *r1, GLOBAL_AS u32 *r2, GLOBAL_AS u32 *r3, 
+    GLOBAL_AS u32 *r4, GLOBAL_AS u32 *r5, GLOBAL_AS u32 *r6, GLOBAL_AS u32 *r7, 
+    GLOBAL_AS u32 *r8, GLOBAL_AS u32 *rs,
     GLOBAL_AS u32 *k0, GLOBAL_AS u32 *k1, GLOBAL_AS u32 *k2, GLOBAL_AS u32 *k3,
     GLOBAL_AS u32 *k4, GLOBAL_AS u32 *k5, GLOBAL_AS u32 *k6, GLOBAL_AS u32 *k7,
-    GLOBAL_AS const u32 p[5], GLOBAL_AS const u32 plen, GLOBAL_AS const u32 n)
+    GLOBAL_AS const u32 slen, GLOBAL_AS const u32 n)
 {
     u32 g_local[PUBLIC_KEY_LENGTH_WITH_PARITY];
     u32 k_local[PRIVATE_KEY_LENGTH];
     secp256k1_t g_xy_local;
     u32 return_value;
-    u32 p_local[5];
-    u32 m_local[5];
-    u32 r_local[5];
-    u32 rp_local = 0;
+    u32 r_local[9];
+    u32 rs_local = 0;
 
     int i = threadIdx.x;
 
@@ -119,29 +119,17 @@ __global__ void genTrxAddressWithPrefix(
     k_local[1] = k6[i];
     k_local[0] = k7[i];
 
-    u32 l = plen;
-    m_local[0] = (l >= 4) ? 0xffffffff : 0xffffffff << ((4-l) << 3);
-    l = (l >= 4) ? l-4 : 0; 
-    p_local[0] = p[0] & m_local[0];
-    m_local[1] = (l >= 4) ? 0xffffffff : 0xffffffff << ((4-l) << 3);
-    l = (l >= 4) ? l-4 : 0; 
-    p_local[1] = p[1] & m_local[1];
-    m_local[2] = (l >= 4) ? 0xffffffff : 0xffffffff << ((4-l) << 3);
-    l = (l >= 4) ? l-4 : 0; 
-    p_local[2] = p[2] & m_local[2];
-    m_local[3] = (l >= 4) ? 0xffffffff : 0xffffffff << ((4-l) << 3);
-    l = (l >= 4) ? l-4 : 0; 
-    p_local[3] = p[3] & m_local[3];
-    m_local[4] = (l >= 4) ? 0xffffffff : 0xffffffff << ((4-l) << 3);
-    l = (l >= 4) ? l-4 : 0; 
-    p_local[4] = p[4] & m_local[4];
-
+    u32 sl = slen > 36 ? 0 : slen;
     u32 n_local = n > 0 ? n : 1;
 
     u32 x[8];
     u32 y[8];
     u32 w[16];
     u32 ni = 0;
+
+    u32 b58[9];
+    u32 b58_sz;
+    u32 data[5];
 
     while (1) {
 
@@ -184,21 +172,50 @@ __global__ void genTrxAddressWithPrefix(
 
         keccak256_update_state(keccak_state, (u8*)w, 64);
 
+        b58_sz = 36;
+
+        data[0] = (u32)(keccak_state[1] >> 32);
+        data[1] = (u32)keccak_state[2];
+        data[2] = (u32)(keccak_state[2] >> 32);
+        data[3] = (u32)keccak_state[3];
+        data[4] = (u32)(keccak_state[3] >> 32);
+
+        b58check_enc((u8*)b58, &b58_sz, 0x41, (u8*)data, 20);
+
         ni++;
 
-        r_local[0] = l2be((u32)(keccak_state[1] >> 32));
-        r_local[1] = l2be((u32)keccak_state[2]);
-        r_local[2] = l2be((u32)(keccak_state[2] >> 32));
-        r_local[3] = l2be((u32)keccak_state[3]);
-        r_local[4] = l2be((u32)(keccak_state[3] >> 32));
-        rp_local = (((r_local[0] & m_local[0]) == p_local[0]) &&  
-                    ((r_local[1] & m_local[1]) == p_local[1]) &&
-                    ((r_local[2] & m_local[2]) == p_local[2]) &&
-                    ((r_local[3] & m_local[3]) == p_local[3]) &&
-                    ((r_local[4] & m_local[4]) == p_local[4])) 
-                    ? ni : 0;
+        r_local[0] = l2be(b58[0]);
+        r_local[1] = l2be(b58[1]);
+        r_local[2] = l2be(b58[2]);
+        r_local[3] = l2be(b58[3]);
+        r_local[4] = l2be(b58[4]);
+        r_local[5] = l2be(b58[5]);
+        r_local[6] = l2be(b58[6]);
+        r_local[7] = l2be(b58[7]);
+        r_local[8] = l2be(b58[8]);
 
-        if (ni >= n_local || rp_local) break;
+        rs_local = 0;
+        if (sl > 0) {
+            u8 * b58sz = (u8*)b58;
+            int j = 35;
+            while (j >= 0) {
+                if (b58sz[j] != 0) break;
+                --j;
+            }
+            int m = (int)(sl-1);
+            if (j >= 0 && j >= m) {
+                if (b58sz[j]-0x30 <= 9) {
+                    while (m > 0) {
+                        if (b58sz[j-1] != b58sz[j]) break;
+                        --j;
+                        --m;
+                    }
+                    if (m == 0) rs_local = ni;
+                }
+            }
+        }
+
+        if (ni >= n_local || rs_local) break;
 
         k_local[(ni & 7)] += 479001599;
     }
@@ -209,7 +226,11 @@ __global__ void genTrxAddressWithPrefix(
     r2[i] = r_local[2];
     r3[i] = r_local[3];
     r4[i] = r_local[4];
-    rp[i] = rp_local;
+    r5[i] = r_local[5];
+    r6[i] = r_local[6];
+    r7[i] = r_local[7];
+    r8[i] = r_local[8];
+    rs[i] = rs_local;
 
     k0[i] = k_local[7];
     k1[i] = k_local[6];
