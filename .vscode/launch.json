@@ -13,10 +13,10 @@
             "justMyCode": true,
             "args": [
                 "--verbose", "--verify",
-                "--output", "./output/l_4.txt",
+                "--output", "./output/l_5.txt",
                 "--suffixLength", "4",
                 "--blocks", "5000",
-                "--blockSize", "256",
+                "--blockSize", "512",
                 "--blockIterations", "20"
             ]
         }

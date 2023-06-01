@@ -120,12 +120,6 @@ def main_vanityTrxAddress(suffixLength: int, keyBlockCount: int, maxBlocks: int,
                 _a = [a_gpu[j][i].get().item() for j in range(9)]
                 trx_address = key_to_str(_a)
                 if check_num_suffix(trx_address, suffixLength):
-                    if verbose:
-                        end_time = time.time()  # end time
-                        elapsed_time = end_time - start_time
-                        print(f"Vanity trx address found in block # {n+1} iteration # {_as}, {elapsed_time:.2f} seconds")
-                        count = (n + 1) * keyBlockCount * (blockIterations if blockIterations > 0 else 1)
-                        print(f"Generated {count} trx addresses, {count/elapsed_time:.2f} addresses/second")
                     _k = [k_gpu[j][i].get().item() for j in range(8)]
                     priv = key_to_hex(_k)
                     if verify and verbose:
@@ -150,6 +144,12 @@ def main_vanityTrxAddress(suffixLength: int, keyBlockCount: int, maxBlocks: int,
                         if outputFile:
                             with open(outputFile, "a") as of:
                                 of.write(f"0x{priv},{trx_address}\n")
+                    if verbose:
+                        end_time = time.time()  # end time
+                        elapsed_time = end_time - start_time
+                        print(f"Vanity trx address found in block # {n+1} iteration # {_as}, {elapsed_time:.2f} seconds")
+                        count = (n + 1) * keyBlockCount * (blockIterations if blockIterations > 0 else 1)
+                        print(f"Generated {count} trx addresses, {count/elapsed_time:.2f} addresses/second")
                     return 1
                 else:
                     print(f"Unexpected result: _as[{i}]={_as}, trx_address[{i}]={trx_address}")
