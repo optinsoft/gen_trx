@@ -6,7 +6,7 @@
     "configurations": [
         {
             "name": "Python: pygentrx",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "pyvanitytrx.py",
             "console": "integratedTerminal",
