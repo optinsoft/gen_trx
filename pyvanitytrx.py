@@ -1,19 +1,19 @@
 """
 @author: Vitaly <vitaly@optinsoft.net> | github.com/optinsoft
 """
+import pathutils
 import pycuda.driver as cuda
 from pycuda.compiler import SourceModule
 import pycuda.gpuarray as gpuarray
 import pycuda.autoinit
 import numpy as np
-from decouple import config
-import os
 from functools import reduce
 import ecdsa
 from Crypto.Hash import keccak
 import base58
 import argparse
 import time
+import random
 
 def randomUInt32() -> int:
     return int.from_bytes(np.random.bytes(4), byteorder='little', signed=False)
@@ -46,12 +46,8 @@ def check_num_suffix(trx_address: str, suffixLength: int) -> bool:
     return s.isdigit() and (s == suffixLength * s[0])
 
 def main_vanityTrxAddress(suffixLength: int, keyBlockCount: int, maxBlocks: int, blockIterations: int, verify: bool, verbose: bool, outputFile: str) -> int:
-    CL_PATH = config('CL_PATH', default='')
-    if len(CL_PATH) > 0:
-        os.environ['PATH'] += ';'+CL_PATH
-    
-    kernel_code = '''
-
+    kernel_code = f'''
+#define RANDOM_VALUE {random.randint(1, 1000000)}
     '''
     def load_code(path: str) -> str:
         with open(path, 'r') as text_file:

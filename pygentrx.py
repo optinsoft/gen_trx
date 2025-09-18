@@ -1,17 +1,17 @@
 """
 @author: Vitaly <vitaly@optinsoft.net> | github.com/optinsoft
 """
+import pathutils
 import pycuda.driver as cuda
 from pycuda.compiler import SourceModule
 import pycuda.gpuarray as gpuarray
 import pycuda.autoinit
 import numpy as np
-from decouple import config
-import os
 from functools import reduce
 import ecdsa
 from Crypto.Hash import keccak
 import base58
+import random
 
 def randomUInt32() -> int:
     return int.from_bytes(np.random.bytes(4), byteorder='little', signed=False)
@@ -57,12 +57,8 @@ def key_to_hex(k: list[int]) -> str:
     return reduce(lambda s, t: str(s) + t.to_bytes(4, byteorder='big').hex(), k[1:], k[0].to_bytes(4, byteorder='big').hex())
 
 def main_getTrxAddress(keyCount: int, verify: bool):
-    CL_PATH = config('CL_PATH', default='')
-    if len(CL_PATH) > 0:
-        os.environ['PATH'] += ';'+CL_PATH
-
-    kernel_code = '''
-
+    kernel_code = f'''
+#define RANDOM_VALUE {random.randint(1, 1000000)}
     '''
     def load_code(path: str) -> str:
         with open(path, 'r') as text_file:
@@ -73,6 +69,7 @@ def main_getTrxAddress(keyCount: int, verify: bool):
                         lines, '')
         return result
     dirCommon = './common/'    
+    
     kernel_code += load_code(dirCommon + 'inc_vendor.h')
     kernel_code += load_code(dirCommon + 'inc_types.h')
     kernel_code += load_code(dirCommon + 'inc_platform_1.h')
@@ -93,7 +90,7 @@ def main_getTrxAddress(keyCount: int, verify: bool):
     kernel_code += load_code(dirBase58 + 'inc_hash_base58.cl')    
     dirKernels = './kernels/'
     kernel_code += load_code(dirKernels + 'gen_trx_addr.cl')
-
+    
     k = [np.array(randomWithTestUInt32Array(keyCount, i), dtype=np.uint32) for i in range(8)]
     a = [np.array(constUInt32Array(keyCount, 0), dtype=np.uint32) for i in range(9)]
 

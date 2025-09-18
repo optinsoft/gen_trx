@@ -5,7 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: pygentrx",
+            "name": "pygentrx",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "pygentrx.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "pyvanitytrx",
             "type": "debugpy",
             "request": "launch",
             "program": "pyvanitytrx.py",
